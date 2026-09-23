@@ -1,0 +1,15 @@
+Objects/
+Listings/
+DebugConfig/
+*.o
+*.axf
+*.hex
+*.bin
+*.map
+*.htm
+*.lnp
+*.dep
+*.crf
+*.d
+*.bak
+*.scvd
