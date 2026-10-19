@@ -1060,6 +1060,16 @@
               <FileType>5</FileType>
               <FilePath>..\Drivers\MCU-103\driver_adc.h</FilePath>
             </File>
+            <File>
+              <FileName>driver_oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\MCU-103\driver_oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver_oled.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Drivers\MCU-103\driver_oled.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

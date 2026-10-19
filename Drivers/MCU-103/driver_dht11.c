@@ -4,6 +4,7 @@
 #include "driver_led.h"
 #include "driver_adc.h"
 #include "driver_modbus_reg.h"
+#include "driver_oled.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -210,6 +211,9 @@ int Dht11_QueueInit(void)
     Dht11_Init();
     Led_Init();
     ADC_Light_Init();
+	  OLED_Init();
+
+	
 
     return 0;
 }
@@ -241,12 +245,12 @@ void Dht11_Task(void *argument)
 
             /* 告警判断 */
             if (msg.data.temperature > 30 || light < 500) {
-                ModbusReg_SetHolding(REG_ALARM, 1);
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
-            } else {
-                ModbusReg_SetHolding(REG_ALARM, 0);
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
-            }
+    ModbusReg_SetHolding(REG_ALARM, 1);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+} else if (msg.data.temperature < 28 && light > 550) {
+    ModbusReg_SetHolding(REG_ALARM, 0);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+}
 
             /* 队列满则丢旧帧 */
             if (osMessageQueuePut(g_dht11_queue, &msg, 0, 0) != osOK) {
@@ -255,7 +259,7 @@ void Dht11_Task(void *argument)
                 osMessageQueuePut(g_dht11_queue, &msg, 0, 0);
             }
         }
-        osDelay(2000);
+        osDelay(500);
     }
 }
 
@@ -266,7 +270,6 @@ void Dht11_Task(void *argument)
 void Dht11_ProcessTask(void *argument)
 {
     DHT11_Msg msg;
-    char buf[64];
     (void)argument;
 
     for (;;)
@@ -278,10 +281,28 @@ void Dht11_ProcessTask(void *argument)
                 g_led_blink_count = 0;
                 Led_Control(LED_GREEN, 1);
 
-                snprintf(buf, sizeof(buf),
-                         "DHT11 OK: Temp = %d C, Humi = %d %%RH\r\n",
-                         msg.data.temperature, msg.data.humidity);
-                Usart_SendString_Safe(buf);
+                /* OLED 显示温湿度、光照、告警 */
+                OLED_ClearLine(0, 0);
+                OLED_PrintString(0, 0, "Temp: ");
+                OLED_PrintSignedVal(6, 0, msg.data.temperature);
+                OLED_PrintString(9, 0, "C");
+
+                OLED_ClearLine(0, 2);
+                OLED_PrintString(0, 2, "Humi: ");
+                OLED_PrintSignedVal(6, 2, msg.data.humidity);
+                OLED_PrintString(9, 2, "%");
+
+                OLED_ClearLine(0, 4);
+                OLED_PrintString(0, 4, "Light: ");
+                OLED_PrintSignedVal(7, 4, ModbusReg_GetHolding(REG_LIGHT));
+
+                OLED_ClearLine(0, 6);
+OLED_PrintString(0, 6, "Alarm: ");
+if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) == GPIO_PIN_SET) {
+    OLED_PrintString(7, 6, "ON ");
+} else {
+    OLED_PrintString(7, 6, "OFF");
+}
             }
             else
             {
@@ -291,9 +312,7 @@ void Dht11_ProcessTask(void *argument)
                                       : "DHT11 timeout\r\n");
             }
         }
-
-        Modbus_Poll();   /* ← 加这行，每1ms轮询一次Modbus队列 */
-
+Modbus_Poll();
         osDelay(1);
     }
 }

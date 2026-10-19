@@ -30,6 +30,7 @@
 #include "driver_dht11.h"
 #include "driver_modbus_reg.h" 
 #include "usart.h" 
+#include "driver_oled.h"
 
 /* USER CODE END Includes */
 
@@ -149,7 +150,7 @@ void MX_FREERTOS_Init(void) {
 	//osThreadNew(Led_BlinkTask, NULL, NULL);
 	
 	//Modbus_TaskHandle = osThreadNew(Modbus_Task,   NULL, &Modbus_Task_attributes); 
-
+  osThreadNew(Modbus_Task, NULL, NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -298,5 +299,13 @@ void Modbus_Poll(void)
     }
 }
 
+void Modbus_Task(void *argument)
+{
+    for (;;)
+    {
+        Modbus_Poll();      // ??????,??,??
+        osDelay(10);        // ? 10ms ???
+    }
+}
 /* USER CODE END Application */
 
